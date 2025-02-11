@@ -20,7 +20,7 @@ This project aims to predict stock market trends using machine learning techniqu
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone (https://github.com/ShubhamShaw01/StockMarketPrediction.git)
+   git clone https://github.com/ShubhamShaw01/StockMarketPrediction.git
    ```
 2. Navigate to the project directory:
    ```bash
@@ -69,3 +69,4 @@ Feel free to fork this repository and submit pull requests for improvements!
 ## Contact
 For any queries, reach out to **Shubham Shaw** at [sshaw1324@gmail.com].
 
+![Thumbnail](https://github.com/user-attachments/assets/d0581f07-2e02-484d-8f3a-cf786403bbd8)
