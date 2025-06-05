@@ -21,5 +21,6 @@ ENV/
 # Docker files (optional)
 *.log
 
-
 .env*
+# certificates
+*.pem
