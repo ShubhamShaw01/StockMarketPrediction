@@ -23,7 +23,7 @@ def get_db_connection():
         )
         return connection
     except Exception as e:
-        st.error(f"Connection error: {e}")
+        st.error(f"Connection error need Troubleshooting: {e}")
         st.stop()
 
 def authenticate_user(username, password):
@@ -99,12 +99,10 @@ def seek_history(username):
             history_data = cursor.fetchall()
             if history_data:
                 df_history = pd.DataFrame(history_data)
-                # Optionally format column names for display
                 df_history.columns = [
                     "Username", "Company Name", "Company Ticker",
                     "Investment Amount", "Final Value", "Total Profit", "Transaction Date"
                 ]
-                # Format numbers for better readability
                 df_history["Investment Amount"] = df_history["Investment Amount"].apply(lambda x: f"₹{x:,.2f}")
                 df_history["Final Value"] = df_history["Final Value"].apply(lambda x: f"₹{x:,.2f}")
                 df_history["Total Profit"] = df_history["Total Profit"].apply(lambda x: f"₹{x:,.2f}")
