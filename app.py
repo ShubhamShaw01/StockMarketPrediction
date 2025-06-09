@@ -106,6 +106,24 @@ def load_stock_model():
     st.error("Failed to load any model. Please check model files.")
     return None
 
+# ------------------- Currency Symbol Helper -------------------
+def get_currency_symbol(currency_code):
+    symbols = {
+        "INR": "₹",
+        "USD": "$",
+        "EUR": "€",
+        "GBP": "£",
+        "JPY": "¥",
+        "CNY": "¥",
+        "CAD": "C$",
+        "AUD": "A$",
+        "CHF": "Fr.",
+        "SGD": "S$",
+        "HKD": "HK$",
+        # Add more as needed
+    }
+    return symbols.get(currency_code, currency_code + " ")
+
 # ------------------- Main Page -------------------
 def main():
     st.set_page_config(page_title="Stock Market Price Prediction", page_icon="📈", layout="wide")
@@ -152,6 +170,14 @@ def main():
 
     if st.session_state.predict_clicked and st.session_state.resolved_ticker:
         stock = st.session_state.resolved_ticker
+        # Get currency code and symbol
+        try:
+            ticker_info = yf.Ticker(stock).info
+            currency_code = ticker_info.get("currency", "INR")
+        except Exception:
+            currency_code = "INR"
+        currency_symbol = get_currency_symbol(currency_code)
+        
         data = yf.download(stock, end=end)
         if data.empty:
             st.error("No stock data found. Please check the company name or ticker.")
@@ -339,7 +365,7 @@ def main():
             i = j
 
         # Get user investment amount
-        investment = st.number_input("Enter Investment Amount (₹)", 
+        investment = st.number_input(f"Enter Investment Amount ({currency_symbol})", 
                              min_value=1000, 
                              max_value=10000000, 
                              value=1000, 
@@ -358,9 +384,9 @@ def main():
 
                 transaction_history.append({
                     'Buy Date': trade['buy_date'].strftime('%Y-%m-%d'),
-                    'Buy Price': f"₹{trade['buy_price']:.2f}",
+                    'Buy Price': f"{currency_symbol}{trade['buy_price']:.2f}",
                     'Sell Date': trade['sell_date'].strftime('%Y-%m-%d'),
-                    'Sell Price': f"₹{trade['sell_price']:.2f}",
+                    'Sell Price': f"{currency_symbol}{trade['sell_price']:.2f}",
                     'Shares': shares,
                     'Profit': profit,
                     'Total Value': current_capital
@@ -377,17 +403,16 @@ def main():
                 st.subheader("Final Results")
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.metric("Initial Investment", f"₹{investment:,.2f}")
+                    st.metric("Initial Investment", f"{currency_symbol}{investment:,.2f}")
                 with col2:
-                    st.metric("Final Value", f"₹{current_capital:,.2f}")
+                    st.metric("Final Value", f"{currency_symbol}{current_capital:,.2f}")
                 with col3:
-                    st.metric("Total Profit", f"₹{total_profit:,.2f} ({roi:.1f}%)")
+                    st.metric("Total Profit", f"{currency_symbol}{total_profit:,.2f} ({roi:.1f}%)")
                 # save history to database
                 insert_history(st.session_state.username, company_name, st.session_state.resolved_ticker, investment, current_capital, total_profit)
             else:
                 st.warning("No profitable trading opportunities found in the prediction window")
                 st.metric("Recommended Action", "Hold Cash", delta_color="off")
-
 #------------------- Routing Logic -------------------
 if st.session_state.page == "login":
     login_page()

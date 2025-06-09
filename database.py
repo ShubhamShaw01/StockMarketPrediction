@@ -4,26 +4,18 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
-timeout = 5  # seconds
-
 def get_db_connection():
     try:
         connection = mysql.connect(
-            charset="utf8mb4",
-            connect_timeout=timeout,
-            cursorclass=mysql.cursors.DictCursor,
-            database=os.getenv("DB_NAME"),
             host=os.getenv("DB_HOST"),
-            password=os.getenv("DB_PASSWORD"),
-            read_timeout=timeout,
-            port=int(os.getenv("DB_PORT", "12564")),
+            port=int(os.getenv("DB_PORT")),
             user=os.getenv("DB_USER"),
-            write_timeout=timeout,
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME")
         )
         return connection
     except Exception as e:
-        st.error(f"Connection error need Troubleshooting: {e}")
+        st.error(f"Connection error: {e}")
         st.stop()
 
 def authenticate_user(username, password):
@@ -34,9 +26,7 @@ def authenticate_user(username, password):
         query = "SELECT COUNT(*) FROM userlogin WHERE userName=%s AND userPassword=%s"
         cursor.execute(query, (username, password))
         result = cursor.fetchone()
-        # result is a dict because of DictCursor, get the first value
-        count = list(result.values())[0] if result else 0
-        return count == 1
+        return result and result[0] == 1
     except Exception as e:
         st.error(f"Authentication error: {e}")
         return False
@@ -49,13 +39,9 @@ def register_user(username, password):
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM userlogin WHERE userName=%s", (username,))
-        result = cursor.fetchone()
-        count = list(result.values())[0] if isinstance(result, dict) else result[0]
-
-        if count > 0:
+        if cursor.fetchone()[0] > 0:
             st.warning("Username already exists.")
             return False
-
         cursor.execute("INSERT INTO userlogin (userName, userPassword) VALUES (%s, %s)", (username, password))
         conn.commit()
         st.success("Account created! Please log in.")
@@ -65,7 +51,6 @@ def register_user(username, password):
         return False
     finally:
         conn.close()
-
 def insert_history(username, company_name, company_ticker, investment_amount, final_value, total_profit):
     connection = get_db_connection()
     if connection:
@@ -89,27 +74,17 @@ def seek_history(username):
     if connection:
         cursor = connection.cursor()
         try:
-            query = """
-            SELECT username, company_name, company_ticker, investment_amount, final_value, total_profit, timestamp
-            FROM history
-            WHERE username = %s
-            ORDER BY id DESC
-            """
+            query = "SELECT username, company_name, company_ticker, investment_amount, final_value, total_profit,timestamp FROM history WHERE username = %s order by Id desc"
             cursor.execute(query, (username,))
             history_data = cursor.fetchall()
             if history_data:
-                df_history = pd.DataFrame(history_data)
-                df_history.columns = [
-                    "Username", "Company Name", "Company Ticker",
-                    "Investment Amount", "Final Value", "Total Profit", "Transaction Date"
-                ]
-                df_history["Investment Amount"] = df_history["Investment Amount"].apply(lambda x: f"₹{x:,.2f}")
-                df_history["Final Value"] = df_history["Final Value"].apply(lambda x: f"₹{x:,.2f}")
-                df_history["Total Profit"] = df_history["Total Profit"].apply(lambda x: f"₹{x:,.2f}")
+                # Adjust the column names to match the actual table schema
+                df_history = pd.DataFrame(history_data, 
+                    columns=["Username", "Company Name", "Company Ticker", "Investment Amount", "Final Value", "Total Profit", "Transaction Date"])
                 st.dataframe(df_history)
             else:
                 st.warning("No history found.")
-        except mysql.MySQLError as err:
+        except mysql.connector.Error as err:
             st.error(f"Error fetching transaction history: {err}")
         finally:
             cursor.close()
