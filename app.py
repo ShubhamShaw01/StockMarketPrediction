@@ -88,22 +88,30 @@ def history_page():
         st.rerun()
 # ------------------- Model Loading -------------------
 def load_stock_model():
-    """Attempt to load the LSTM model with fallback options"""
+    """Attempt to load the LSTM model with fallback options and detailed error reporting"""
+    import traceback
     model_paths = [
         'best_model.keras'
     ]
-    
     for model_path in model_paths:
         if os.path.exists(model_path):
+            # Check if file is not empty
+            if os.path.getsize(model_path) == 0:
+                st.error(f"Model file {model_path} is empty or corrupted.")
+                continue
             try:
                 model = load_model(model_path, compile=False)
                 model.compile(optimizer='adam', loss='mean_squared_error')
                 return model
-            except Exception as e:
-                st.warning(f"Failed to load {model_path}: {str(e)}")
-                continue
-    
-    st.error("Failed to load any model. Please check model files.")
+            except Exception as e1:
+                try:
+                    model = load_model(model_path, compile=True)
+                    model.compile(optimizer='adam', loss='mean_squared_error')
+                    return model
+                except Exception as e2:
+                    st.error(f"Failed to load {model_path}: {str(e1)}\n{traceback.format_exc()}")
+                    continue
+    st.error("Failed to load any model. Please check model files. If you retrained the model, ensure the architecture matches and the file is not corrupted.")
     return None
 
 # ------------------- Currency Symbol Helper -------------------
