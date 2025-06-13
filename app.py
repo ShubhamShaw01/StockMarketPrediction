@@ -185,7 +185,7 @@ def main():
     # Fetch and display historical data
         data = yf.download(stock, end=end)
         st.subheader("Historical Data")
-        st.write(data)
+        st.write(data[::-1])
 
     #train data from start to today
         data_train=pd.DataFrame(data.Close[0:int(len(data)*0.80)])
